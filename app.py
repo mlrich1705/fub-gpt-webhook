@@ -17,11 +17,18 @@ def get_lead_history():
         params={"q": lead_name}
     )
 
-    leads = search_resp.json().get("people", [])
-    if not leads:
-        return jsonify({"error": "Lead not found"}), 404
+ leads = search_resp.json().get("people", [])
+if not leads:
+    return jsonify({"error": "Lead not found"}), 404
 
-    lead_id = leads[0]["id"]
+# Try to find exact match
+matched_lead = next((lead for lead in leads if lead.get("name", "").lower() == lead_name.lower()), None)
+
+if not matched_lead:
+    return jsonify({"error": "Exact name match not found"}), 404
+
+lead_id = matched_lead["id"]
+
 
     # Step 2: Get their timeline
     timeline_resp = requests.get(
