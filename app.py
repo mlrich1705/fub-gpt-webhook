@@ -9,12 +9,15 @@ FUB_API_KEY = os.environ.get("FUB_API_KEY")
 def get_lead_history():
     data = request.get_json()
     lead_name = data.get("lead_name")
+    lead_email = data.get("lead_email")
+    lead_phone = data.get("lead_phone")
 
-    # Step 1: Search for the lead
+    search_query = lead_name or lead_email or lead_phone
+
     search_resp = requests.get(
         "https://api.followupboss.com/v1/people",
         headers={"Authorization": f"Bearer {FUB_API_KEY}"},
-        params={"q": lead_name}
+        params={"q": search_query}
     )
 
     leads = search_resp.json().get("people", [])
@@ -25,14 +28,21 @@ def get_lead_history():
     if not leads:
         return jsonify({"error": "Lead not found"}), 404
 
-    # Try to find exact match
-    matched_lead = next(
-        (lead for lead in leads if lead.get("name", "").lower() == lead_name.lower()),
-        None
-    )
+    # Try to find best match
+    matched_lead = None
+    for lead in leads:
+        if lead_name and lead.get("name", "").lower() == lead_name.lower():
+            matched_lead = lead
+            break
+        if lead_email and lead.get("emails") and lead_email.lower() in [e.lower() for e in lead.get("emails")]:
+            matched_lead = lead
+            break
+        if lead_phone and lead.get("phones") and lead_phone in lead.get("phones"):
+            matched_lead = lead
+            break
 
     if not matched_lead:
-        return jsonify({"error": "Exact name match not found"}), 404
+        return jsonify({"error": "Exact lead match not found"}), 404
 
     lead_id = matched_lead["id"]
 
@@ -54,7 +64,7 @@ def get_lead_history():
             })
 
     return jsonify({
-        "lead_name": lead_name,
+        "lead_name": matched_lead.get("name"),
         "lead_id": lead_id,
         "messages": messages
     })
