@@ -18,6 +18,10 @@ def get_lead_history():
     )
 
     leads = search_resp.json().get("people", [])
+    print("Lead search results:")
+    for lead in leads:
+        print(f"- {lead.get('name')} (ID: {lead.get('id')})")
+
     if not leads:
         return jsonify({"error": "Lead not found"}), 404
 
