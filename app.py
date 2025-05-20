@@ -17,12 +17,15 @@ def get_lead_history():
         params={"q": lead_name}
     )
 
- leads = search_resp.json().get("people", [])
+leads = search_resp.json().get("people", [])
 if not leads:
     return jsonify({"error": "Lead not found"}), 404
 
 # Try to find exact match
-matched_lead = next((lead for lead in leads if lead.get("name", "").lower() == lead_name.lower()), None)
+matched_lead = next(
+    (lead for lead in leads if lead.get("name", "").lower() == lead_name.lower()),
+    None
+)
 
 if not matched_lead:
     return jsonify({"error": "Exact name match not found"}), 404
