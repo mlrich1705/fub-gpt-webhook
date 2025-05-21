@@ -1,14 +1,19 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 import os
 import requests
 
 app = Flask(__name__)
 
+# ✅ Load the FUB API key once, at the top
+FUB_API_KEY = os.environ.get("FUB_API_KEY")
+print("API key found:", bool(FUB_API_KEY))
+
+
+# ✅ TEST ENDPOINT
 @app.route("/test-fub")
 def test_fub():
-    api_key = os.getenv("FUB_API_KEY")
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {FUB_API_KEY}",
         "Accept": "application/json"
     }
     response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers)
@@ -17,9 +22,8 @@ def test_fub():
         "data": response.json()
     }
 
-FUB_API_KEY = os.environ.get("FUB_API_KEY")
-print("API key found:", bool(FUB_API_KEY))
 
+# ✅ GET LEAD HISTORY ENDPOINT
 @app.route("/get_lead_history", methods=["POST"])
 def get_lead_history():
     data = request.get_json()
@@ -70,7 +74,6 @@ def get_lead_history():
 
     lead_id = matched_lead["id"]
 
-    # Step 2: Get timeline
     timeline_resp = requests.get(
         f"https://api.followupboss.com/v1/people/{lead_id}/timeline",
         headers={"Authorization": f"Bearer {FUB_API_KEY}"}
@@ -93,9 +96,12 @@ def get_lead_history():
         "messages": messages
     })
 
+
+# ✅ Health check for Render to verify uptime
 @app.route("/", methods=["GET"])
 def health_check():
     return "FUB webhook is live", 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
