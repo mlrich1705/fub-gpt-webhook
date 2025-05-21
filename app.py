@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 FUB_API_KEY = os.environ.get("FUB_API_KEY")
+print("API key found:", bool(FUB_API_KEY))
 
 @app.route("/get_lead_history", methods=["POST"])
 def get_lead_history():
