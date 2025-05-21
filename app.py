@@ -73,4 +73,14 @@ def get_lead_history():
             })
 
     return jsonify({
-        "lead_name"_
+        "lead_name": matched_lead.get("name"),
+        "lead_id": lead_id,
+        "messages": messages
+    })
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return "FUB webhook is live", 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
