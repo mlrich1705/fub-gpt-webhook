@@ -1,8 +1,22 @@
-from flask import Flask, request, jsonify
-import requests
+from flask import Flask
 import os
+import requests
 
 app = Flask(__name__)
+
+@app.route("/test-fub")
+def test_fub():
+    api_key = os.getenv("FUB_API_KEY")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json"
+    }
+    response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers)
+    return {
+        "status": response.status_code,
+        "data": response.json()
+    }
+
 FUB_API_KEY = os.environ.get("FUB_API_KEY")
 print("API key found:", bool(FUB_API_KEY))
 
