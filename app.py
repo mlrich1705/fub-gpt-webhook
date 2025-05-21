@@ -24,21 +24,30 @@ def get_lead_history():
     print("Lead search results:")
     for lead in leads:
         print(f"- {lead.get('name')} (ID: {lead.get('id')})")
+        print(f"  Emails: {lead.get('emails')}")
+        print(f"  Phones: {lead.get('phones')}")
 
     if not leads:
         return jsonify({"error": "Lead not found"}), 404
 
-    # Try to find best match
     matched_lead = None
     for lead in leads:
         if lead_name and lead.get("name", "").lower() == lead_name.lower():
             matched_lead = lead
             break
-        if lead_email and lead.get("emails") and lead_email.lower() in [e.lower() for e in lead.get("emails")]:
-            matched_lead = lead
-            break
-        if lead_phone and lead.get("phones") and lead_phone in lead.get("phones"):
-            matched_lead = lead
+        if lead_email and lead.get("emails"):
+            for e in lead.get("emails"):
+                if e.lower() == lead_email.lower():
+                    matched_lead = lead
+                    break
+        if lead_phone and lead.get("phones"):
+            clean_requested = ''.join(filter(str.isdigit, lead_phone))
+            for stored_phone in lead.get("phones"):
+                clean_stored = ''.join(filter(str.isdigit, stored_phone))
+                if clean_requested == clean_stored:
+                    matched_lead = lead
+                    break
+        if matched_lead:
             break
 
     if not matched_lead:
@@ -46,7 +55,7 @@ def get_lead_history():
 
     lead_id = matched_lead["id"]
 
-    # Step 2: Get their timeline
+    # Step 2: Get timeline
     timeline_resp = requests.get(
         f"https://api.followupboss.com/v1/people/{lead_id}/timeline",
         headers={"Authorization": f"Bearer {FUB_API_KEY}"}
@@ -64,14 +73,4 @@ def get_lead_history():
             })
 
     return jsonify({
-        "lead_name": matched_lead.get("name"),
-        "lead_id": lead_id,
-        "messages": messages
-    })
-
-@app.route("/", methods=["GET"])
-def health_check():
-    return "FUB webhook is live", 200
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+        "lead_name"_
