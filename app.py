@@ -51,18 +51,19 @@ def get_lead_history():
 
     matched_lead = None
     for lead in leads:
-        if lead_name and lead.get("name", "").lower() == lead_name.lower():
+        # 🔄 Loosened match: check if input name is contained in FUB lead's name
+        if lead_name and lead_name.lower() in lead.get("name", "").lower():
             matched_lead = lead
             break
         if lead_email and lead.get("emails"):
             for e in lead.get("emails"):
-                if e.lower() == lead_email.lower():
+                if e.get("value", "").lower() == lead_email.lower():
                     matched_lead = lead
                     break
         if lead_phone and lead.get("phones"):
             clean_requested = ''.join(filter(str.isdigit, lead_phone))
             for stored_phone in lead.get("phones"):
-                clean_stored = ''.join(filter(str.isdigit, stored_phone))
+                clean_stored = ''.join(filter(str.isdigit, stored_phone.get("value", "")))
                 if clean_requested == clean_stored:
                     matched_lead = lead
                     break
