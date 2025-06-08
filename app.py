@@ -1,22 +1,22 @@
 from flask import Flask, request, jsonify
 import requests
+from requests.auth import HTTPBasicAuth
 
 app = Flask(__name__)
 
-# ✅ Hardcoded valid FUB API key
 FUB_API_KEY = "fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf"
 
 @app.route("/test-fub")
 def test_fub():
     headers = {
-        "Authorization": f"Bearer {FUB_API_KEY}",  
         "Accept": "application/json"
     }
-    response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers)
+    auth = HTTPBasicAuth(FUB_API_KEY, '')  # API key as username, blank password
+    response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers, auth=auth)
     print("FUB response:", response.status_code, response.text)
     return {
         "status": response.status_code,
-        "data": response.json() if response.headers.get("Content-Type", "").startswith("application/json") else response.text
+        "data": response.json()
     }
 
 @app.route("/", methods=["GET"])
