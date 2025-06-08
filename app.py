@@ -1,29 +1,3 @@
-from flask import Flask, request, jsonify
-import os
-import requests
-
-app = Flask(__name__)
-
-# ✅ Load the FUB API key once, at the top
-FUB_API_KEY = os.environ.get("FUB_API_KEY")
-print("API key found:", bool(FUB_API_KEY))
-
-
-# ✅ TEST ENDPOINT
-@app.route("/test-fub")
-def test_fub():
-    headers = {
-        "Authorization": f"Bearer {FUB_API_KEY}",
-        "Accept": "application/json"
-    }
-    response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers)
-    return {
-        "status": response.status_code,
-        "data": response.json()
-    }
-
-
-# ✅ GET LEAD HISTORY ENDPOINT
 @app.route("/get_lead_history", methods=["POST"])
 def get_lead_history():
     data = request.get_json()
@@ -33,14 +7,20 @@ def get_lead_history():
 
     search_query = lead_name or lead_email or lead_phone
 
+    # Log what we're searching for
+    print("📡 Attempting to hit FUB /people endpoint with query:", search_query)
+
     search_resp = requests.get(
         "https://api.followupboss.com/v1/people",
         headers={"Authorization": f"Bearer {FUB_API_KEY}"},
         params={"q": search_query}
     )
 
+    # Log the response status and content
+    print("🔁 FUB Response:", search_resp.status_code, search_resp.text)
+
     leads = search_resp.json().get("people", [])
-    print("Lead search results:")
+    print("🔍 Lead search results:")
     for lead in leads:
         print(f"- {lead.get('name')} (ID: {lead.get('id')})")
         print(f"  Emails: {lead.get('emails')}")
@@ -95,13 +75,3 @@ def get_lead_history():
         "lead_id": lead_id,
         "messages": messages
     })
-
-
-# ✅ Health check for Render to verify uptime
-@app.route("/", methods=["GET"])
-def health_check():
-    return "FUB webhook is live", 200
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
