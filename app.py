@@ -5,7 +5,7 @@ import requests
 app = Flask(__name__)  # ✅ This must come before any @app.route uses it
 
 # ✅ Load the FUB API key once, at the top
-FUB_API_KEY = os.environ.get("FUB_API_KEY")
+FUB_API_KEY = os.environ.get("fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf")
 print("API key found:", bool(FUB_API_KEY))
 
 
