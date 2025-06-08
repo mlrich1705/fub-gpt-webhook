@@ -8,15 +8,14 @@ FUB_API_KEY = "fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf"
 
 @app.route("/test-fub")
 def test_fub():
+    url = "https://api.followupboss.com/v1/people"  # ✅ VALID endpoint
     headers = {
         "Accept": "application/json"
     }
-    auth = HTTPBasicAuth(FUB_API_KEY, '')  # API key = username, blank password
-    url = "https://api.followupboss.com/v1/users/me"
-    
+    auth = HTTPBasicAuth(FUB_API_KEY, '')  # ✅ API key = username, password = blank
+
     response = requests.get(url, headers=headers, auth=auth)
-    print("FUB response:", response.status_code, response.text)
-    
+
     try:
         return jsonify({
             "status": response.status_code,
