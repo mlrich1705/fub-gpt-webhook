@@ -1,29 +1,23 @@
 from flask import Flask, request, jsonify
 import requests
 from requests.auth import HTTPBasicAuth
+import os
 
 app = Flask(__name__)
 
-# 🔐 Replace this key later with os.environ.get(...) for production
-FUB_API_KEY = "fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf"
+# Replace this with your actual API key or set as environment variable
+FUB_API_KEY = os.getenv("FUB_API_KEY", "your_fub_api_key_here")
 
-@app.route("/test-fub")
-def test_fub():
-    url = "https://api.followupboss.com/v1/people"
-    headers = {"Accept": "application/json"}
-    auth = HTTPBasicAuth(FUB_API_KEY, "")
-    response = requests.get(url, headers=headers, auth=auth)
-    try:
-        return jsonify({"status": response.status_code, "data": response.json()})
-    except Exception as e:
-        return jsonify({"status": response.status_code, "error": str(e), "raw": response.text})
+@app.route("/", methods=["GET"])
+def health_check():
+    return "FUB webhook is live", 200
 
 @app.route("/get_lead_history", methods=["POST"])
 def get_lead_history():
-    data = request.get_json()
-    lead_name = data.get("lead_name")
-    lead_email = data.get("lead_email")
-    lead_phone = data.get("lead_phone")
+    data = request.json
+    lead_name = data.get("lead_name", "")
+    lead_email = data.get("lead_email", "")
+    lead_phone = data.get("lead_phone", "")
 
     search_query = lead_name or lead_email or lead_phone
     print("📡 Attempting to hit FUB /people endpoint with query:", search_query)
@@ -39,17 +33,14 @@ def get_lead_history():
 
     matched_lead = None
     for lead in leads:
-        # match by name
         if lead_name and lead.get("name", "").lower() == lead_name.lower():
             matched_lead = lead
             break
-        # match by email
         if lead_email and lead.get("emails"):
             for email in lead["emails"]:
                 if email["value"].lower() == lead_email.lower():
                     matched_lead = lead
                     break
-        # match by phone
         if lead_phone and lead.get("phones"):
             for phone in lead["phones"]:
                 if ''.join(filter(str.isdigit, phone["value"])) == ''.join(filter(str.isdigit, lead_phone)):
@@ -59,32 +50,22 @@ def get_lead_history():
             break
 
     if not matched_lead:
-        return jsonify({"error": "Lead not found"}), 404
+        return jsonify({"error": "Lead not found."}), 404
 
     lead_id = matched_lead["id"]
-    timeline_url = f"https://api.followupboss.com/v1/people/{lead_id}/timeline"
-    timeline_resp = requests.get(timeline_url, auth=HTTPBasicAuth(FUB_API_KEY, ""))
-    timeline = timeline_resp.json().get("events", [])
+    timeline_resp = requests.get(
+        f"https://api.followupboss.com/v1/people/{lead_id}/timeline",
+        auth=HTTPBasicAuth(FUB_API_KEY, "")
+    )
 
-    messages = []
-    for event in timeline:
-        if event["type"] in ["Email", "Call", "Note", "Text"]:
-            messages.append({
-                "type": event["type"],
-                "date": event["dateCreated"],
-                "body": event.get("body", event.get("message", "")),
-                "agent": event.get("userName", "")
-            })
-
+    timeline = timeline_resp.json()
     return jsonify({
-        "lead_name": matched_lead.get("name"),
-        "lead_id": lead_id,
-        "messages": messages
+        "status": 200,
+        "data": {
+            "lead": matched_lead,
+            "timeline": timeline
+        }
     })
-
-@app.route("/", methods=["GET"])
-def health_check():
-    return "FUB webhook is live", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
