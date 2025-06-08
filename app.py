@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Replace this with your actual API key or set as environment variable
-FUB_API_KEY = os.getenv("FUB_API_KEY", "your_fub_api_key_here")
+FUB_API_KEY = os.getenv("FUB_API_KEY", "fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf")
 
 @app.route("/", methods=["GET"])
 def health_check():
