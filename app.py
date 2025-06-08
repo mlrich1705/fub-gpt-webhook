@@ -1,49 +1,37 @@
-@app.route("/get_lead_history", methods=["POST"])
-def get_lead_history():
-    data = request.get_json()
-    lead_name = data.get("lead_name")
-    lead_email = data.get("lead_email")
-    lead_phone = data.get("lead_phone")
+from flask import Flask, jsonify
+import requests
+from requests.auth import HTTPBasicAuth
 
-    query = lead_name or lead_email or lead_phone
-    if not query:
-        return jsonify({"error": "You must provide a name, email, or phone"}), 400
+app = Flask(__name__)
 
-    auth = HTTPBasicAuth(FUB_API_KEY, "")
-    headers = {"Accept": "application/json"}
-    search_resp = requests.get(
-        "https://api.followupboss.com/v1/people",
-        headers=headers,
-        auth=auth,
-        params={"q": query}
-    )
+# ✅ Your permanent Follow Up Boss API key (username), leave password blank
+FUB_API_KEY = "fka_16VZis0qzdMZ42CVyzeXJsq5Zki2e3Nxnf"
 
-    leads = search_resp.json().get("people", [])
-    if not leads:
-        return jsonify({"error": "Lead not found"}), 404
+@app.route("/test-fub")
+def test_fub():
+    url = "https://api.followupboss.com/v1/people"
+    headers = {
+        "Accept": "application/json"
+    }
+    auth = HTTPBasicAuth(FUB_API_KEY, "")  # Username = API key, password = empty
 
-    matched_lead = leads[0]
-    lead_id = matched_lead.get("id")
+    response = requests.get(url, headers=headers, auth=auth)
 
-    timeline_resp = requests.get(
-        f"https://api.followupboss.com/v1/people/{lead_id}/timeline",
-        headers=headers,
-        auth=auth
-    )
+    try:
+        return jsonify({
+            "status": response.status_code,
+            "data": response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": response.status_code,
+            "error": str(e),
+            "raw": response.text
+        })
 
-    events = timeline_resp.json().get("events", [])
-    messages = []
-    for e in events:
-        if e["type"] in ["Email", "Call", "Note", "Text"]:
-            messages.append({
-                "type": e["type"],
-                "date": e.get("dateCreated", ""),
-                "body": e.get("body", "") or e.get("message", ""),
-                "agent": e.get("userName", "")
-            })
+@app.route("/", methods=["GET"])
+def health_check():
+    return "FUB webhook is live", 200
 
-    return jsonify({
-        "lead_name": matched_lead.get("name"),
-        "lead_id": lead_id,
-        "messages": messages
-    })
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
