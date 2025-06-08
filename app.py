@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -11,13 +11,23 @@ def test_fub():
     headers = {
         "Accept": "application/json"
     }
-    auth = HTTPBasicAuth(FUB_API_KEY, '')  # API key as username, blank password
-    response = requests.get("https://api.followupboss.com/v1/users/me", headers=headers, auth=auth)
+    auth = HTTPBasicAuth(FUB_API_KEY, '')  # API key = username, blank password
+    url = "https://api.followupboss.com/v1/users/me"
+    
+    response = requests.get(url, headers=headers, auth=auth)
     print("FUB response:", response.status_code, response.text)
-    return {
-        "status": response.status_code,
-        "data": response.json()
-    }
+    
+    try:
+        return jsonify({
+            "status": response.status_code,
+            "data": response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": response.status_code,
+            "error": str(e),
+            "raw": response.text
+        })
 
 @app.route("/", methods=["GET"])
 def health_check():
